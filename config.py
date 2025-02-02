@@ -1,5 +1,4 @@
 # config.py
-# config.py
 import os
 from datetime import timedelta
 
@@ -17,3 +16,4 @@ class Config:
     
     # Flask configuration
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() in ['true', '1', 't']
+

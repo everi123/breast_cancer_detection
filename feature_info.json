@@ -1,0 +1,38 @@
+{
+  "features": [
+    "worst area",
+    "worst concave points",
+    "mean concave points",
+    "worst radius",
+    "mean concavity",
+    "worst perimeter",
+    "mean perimeter",
+    "mean radius",
+    "mean area",
+    "worst concavity"
+  ],
+  "descriptions": {
+    "worst area": "Description for worst area",
+    "worst concave points": "Description for worst concave points",
+    "mean concave points": "Description for mean concave points",
+    "worst radius": "Description for worst radius",
+    "mean concavity": "Description for mean concavity",
+    "worst perimeter": "Description for worst perimeter",
+    "mean perimeter": "Description for mean perimeter",
+    "mean radius": "Description for mean radius",
+    "mean area": "Description for mean area",
+    "worst concavity": "Description for worst concavity"
+  },
+  "importance_order": {
+    "worst area": 1,
+    "worst concave points": 2,
+    "mean concave points": 3,
+    "worst radius": 4,
+    "mean concavity": 5,
+    "worst perimeter": 6,
+    "mean perimeter": 7,
+    "mean radius": 8,
+    "mean area": 9,
+    "worst concavity": 10
+  }
+}
