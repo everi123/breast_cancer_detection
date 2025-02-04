@@ -1,5 +1,4 @@
 # app/predict/routes.py
-
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import joblib
@@ -32,59 +31,6 @@ except Exception as e:
     feature_info = None
     REQUIRED_FEATURES = []
 
-def get_risk_assessment(pred_class, confidence_pct):
-    """
-    Maps confidence (in percentage) to risk level and returns
-    a tuple of (risk, message, recommended_actions).
-
-    For malignant predictions (class 0):
-      - High Risk: confidence >= 75%
-      - Moderate Risk: 60% <= confidence < 75%
-      - Low Risk: confidence < 60%
-      
-    For benign predictions (class 1), we always return Low Risk.
-    """
-    if pred_class == 0:  # malignant
-        if confidence_pct >= 75:
-            risk = "High Risk"
-            message = "High likelihood of malignancy detected. Please consult a doctor immediately."
-            actions = [
-                "Schedule immediate follow-up",
-                "Prepare detailed medical history",
-                "Contact oncology department"
-            ]
-        elif confidence_pct >= 60:
-            risk = "Moderate Risk"
-            message = "Results are borderline. Additional diagnostic tests are advised."
-            actions = [
-                "Consider further imaging and tests",
-                "Review previous medical records",
-                "Consult with a specialist"
-            ]
-        else:
-            risk = "Low Risk"
-            message = "Malignancy probability is lower; however, further monitoring is recommended."
-            actions = [
-                "Schedule regular follow-ups",
-                "Monitor any changes",
-                "Discuss concerns with your physician"
-            ]
-    else:  # benign
-        risk = "Low Risk"
-        message = "The model is highly confident in a benign diagnosis. Routine screening is advised."
-        actions = [
-            "Maintain regular check-ups",
-            "Continue with standard health monitoring"
-        ]
-    return risk, message, actions
-
-@predict_bp.route('/features', methods=['GET'])
-def get_features():
-    """Endpoint to get the required features and their descriptions."""
-    if feature_info is None:
-        return jsonify({"error": "Feature information not available"}), 500
-    return jsonify(feature_info), 200
-
 @predict_bp.route('/predict', methods=['POST'])
 @jwt_required()
 def predict():
@@ -98,66 +44,83 @@ def predict():
 
         data = request.get_json(force=True)
         
-        # Support both dictionary and list inputs.
-        if isinstance(data, dict):
-            # Either a dictionary with a "features" key or a dictionary with feature names
-            if 'features' in data:
-                # Expecting a list in the "features" key
-                features = data['features']
-            else:
-                # Build list from required features; missing keys will be set to None
-                features = [data.get(feature, None) for feature in REQUIRED_FEATURES]
-        else:
-            features = data
-
-        # Validate features count
-        if len(features) != len(REQUIRED_FEATURES):
+        # Handle dictionary input format
+        if not isinstance(data, dict) or 'features' not in data:
             return jsonify({
-                "error": "Invalid number of features",
-                "message": f"Expected {len(REQUIRED_FEATURES)} features, got {len(features)}",
-                "required_features": feature_info
+                "error": "Invalid input format",
+                "message": "Expected format: {'features': {feature_name: value, ...}}",
+                "example": {
+                    "features": {
+                        "worst area": 515.8,
+                        "worst concave points": 0.0737,
+                        # ... other features
+                    }
+                }
             }), 400
 
-        # Validate that all features are numbers
-        if not all(isinstance(x, (int, float)) for x in features):
+        features_dict = data['features']
+        
+        # Validate all required features are present
+        missing_features = set(REQUIRED_FEATURES) - set(features_dict.keys())
+        if missing_features:
+            return jsonify({
+                "error": "Missing features",
+                "missing_features": list(missing_features),
+                "required_features": REQUIRED_FEATURES
+            }), 400
+
+        # Convert dictionary to ordered list based on feature importance
+        features_list = [features_dict[feature] for feature in REQUIRED_FEATURES]
+
+        # Validate numerical values
+        if not all(isinstance(x, (int, float)) for x in features_list):
             return jsonify({
                 "error": "Invalid feature values",
                 "message": "All features must be numerical values"
             }), 400
 
-        # Prepare input data for prediction
-        input_data = np.array(features).reshape(1, -1)
+        # Make prediction
+        input_data = np.array(features_list).reshape(1, -1)
         scaled_data = scaler_top.transform(input_data)
-        
-        # Obtain prediction and probabilities from the model
         prediction = final_model.predict(scaled_data)
         probabilities = final_model.predict_proba(scaled_data)[0]
         
-        # Model classes: 0 -> malignant, 1 -> benign
-        pred_class = prediction[0]
-        result_label = "malignant" if pred_class == 0 else "benign"
-        
-        # Use the corresponding probability for the predicted class as confidence
-        confidence = float(probabilities[0] if pred_class == 0 else probabilities[1])
-        confidence_pct = round(confidence * 100, 2)
-        
-        # Determine risk assessment based on prediction and confidence
-        risk, message, recommended_actions = get_risk_assessment(pred_class, confidence_pct)
-        
+        result = "malignant" if prediction[0] == 0 else "benign"
+        confidence = float(probabilities[0] if result == "malignant" else probabilities[1])
+
         response = {
-            "prediction": result_label,
-            "confidence": confidence_pct,
-            "severity": risk,
-            "message": message,
-            "recommended_actions": recommended_actions,
-            "features_received": dict(zip(REQUIRED_FEATURES, features))
+            "prediction": result,
+            "confidence": round(confidence * 100, 2),
+            "features_received": {
+                feature: value for feature, value in zip(REQUIRED_FEATURES, features_list)
+            }
         }
-        
+
+        if result == "malignant":
+            response.update({
+                "severity": "High Risk",
+                "message": "Please consult a doctor immediately.",
+                "recommended_actions": [
+                    "Schedule immediate follow-up",
+                    "Prepare medical history",
+                    "Contact oncology department"
+                ]
+            })
+        else:
+            response.update({
+                "severity": "Low Risk",
+                "message": "No immediate action required.",
+                "recommended_actions": [
+                    "Continue regular check-ups",
+                    "Schedule next screening as recommended"
+                ]
+            })
+
         return jsonify(response), 200
 
     except Exception as e:
         return jsonify({
             "error": "Prediction failed",
             "message": str(e),
-            "required_features": feature_info
+            "required_features": REQUIRED_FEATURES
         }), 500

@@ -320,4 +320,4 @@ curl -X POST http://localhost:5000/predict/predict \
       "mean area": 467.8,
       "worst concavity": 0.2403
     }
-  }'
+  }

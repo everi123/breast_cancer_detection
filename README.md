@@ -1,35 +1,20 @@
+# API de Détection du Cancer du Sein
 
-# Breast Cancer Detection API
+Ce projet fournit une API Flask pour la détection du cancer du sein à l'aide d'un modèle d'apprentissage automatique. Il inclut un système d'authentification JWT et des prédictions interprétables.
 
-This project provides a Flask-based API for breast cancer detection using a machine learning model.
+## 📋 Table des matières
+- [Installation](#installation)
+- [Entraînement du modèle](#entraînement-du-modèle)
+- [Lancement de l'API](#lancement-de-lapi)
+- [Endpoints](#endpoints)
+- [Documentation](#documentation)
+- [Tests](#tests)
+- [Exemple de réponse](#exemple-de-réponse)
+- [Structure du projet](#structure-du-projet)
 
-## Installation
-1. Clone the repository:
-   ```sh
-   git clone https://github.com/yourusername/breast_cancer_detection.git
-   ```
-2. Navigate to the project directory:
-   ```sh
-   cd breast_cancer_detection
-   ```
-3. Install dependencies:
-   ```sh
-   pip install -r requirements.txt
-   ```
+## 📥 Installation
 
-## Training the Model
-Run the following command to train the model:
-```sh
-python train_model.py
-```
-
-## Running the Application
-To start the Flask server, run:
-```sh
-python run.py
-```
-
-## API Endpoints
-- `POST /auth/login` - User authentication
-- `POST /predict/` - Make a prediction by sending feature data
-
+1. Cloner le dépôt :
+```bash
+git clone https://github.com/votrenomutilisateur/detection-cancer-sein.git
+cd detection-cancer-sein

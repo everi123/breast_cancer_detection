@@ -4,7 +4,7 @@ from datetime import timedelta
 
 class Config:
     # Database configuration
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///users.db')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///app.db')  # Changed to app.db for clarity
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # JWT configuration
@@ -16,4 +16,6 @@ class Config:
     
     # Flask configuration
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() in ['true', '1', 't']
-
+    
+    # Migration configuration (added)
+    MIGRATION_DIR = os.path.join('migrations')
